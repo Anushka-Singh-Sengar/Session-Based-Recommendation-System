@@ -72,6 +72,12 @@ def parse_arguments() -> argparse.Namespace:
         default=None,
         help="Optional maximum number of chunks to process (for quick testing).",
     )
+    parser.add_argument(
+        "--debug-max-rows",
+        type=int,
+        default=None,
+        help="Optional row count limit for smoke testing / debugging.",
+    )
     return parser.parse_args()
 
 
@@ -111,6 +117,7 @@ def run_inspection(
     output_dir: Path,
     chunksize: int = 2_000_000,
     max_chunks: Optional[int] = None,
+    debug_max_rows: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Run memory-efficient dataset inspection and produce all artifacts.
@@ -161,7 +168,12 @@ def run_inspection(
     max_ts_ms = float("-inf")
 
     chunk_idx = 0
-    for chunk in read_raw_clicks_chunked(raw_path, chunksize=chunksize, add_row_index=True):
+    for chunk in read_raw_clicks_chunked(
+        raw_path,
+        chunksize=chunksize,
+        add_row_index=True,
+        max_rows=debug_max_rows,
+    ):
         chunk_idx += 1
         num_chunk_rows = len(chunk)
         total_clicks += num_chunk_rows
@@ -820,6 +832,7 @@ def main() -> None:
             output_dir=output_dir,
             chunksize=args.chunksize,
             max_chunks=args.max_chunks,
+            debug_max_rows=args.debug_max_rows,
         )
     except Exception as exc:
         logger.exception("Inspection failed with error: %s", exc)

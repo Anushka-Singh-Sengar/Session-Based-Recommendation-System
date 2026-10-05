@@ -41,7 +41,7 @@ venv.bak/
 *~
 .DS_Store
 
-# Data files (Exclude large datasets, preserve directories via .gitkeep)
+# Data files (Exclude large raw and processed datasets, preserve directories via .gitkeep)
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*
@@ -55,8 +55,7 @@ data/processed/*
 *.bin
 *.onnx
 
-# Experiment Results, logs and outputs
-results/*
-!results/.gitkeep
+# Ignore debug preprocessing results while tracking production reports/metadata
+results/preprocessing/_debug/
 logs/
 *.log

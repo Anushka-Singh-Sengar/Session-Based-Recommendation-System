@@ -48,6 +48,7 @@ data/processed/*
 !data/processed/.gitkeep
 
 # Model checkpoints & weights
+checkpoints/
 *.pt
 *.pth
 *.ckpt

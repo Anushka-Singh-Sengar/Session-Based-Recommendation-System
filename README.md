@@ -138,3 +138,32 @@ python scripts/preprocess_data.py --subset-fraction 1/4
 ```bash
 python scripts/preprocess_data.py --verify-only frac_1-64_minlen2_minsup5_maxlen20_collapse_split80-10-10
 ```
+
+---
+
+## 🤖 Modeling Pipeline (GRU Baseline, In Progress)
+
+The modeling stage implements a shared session recommender framework with pluggable sequence encoders (`GRUEncoder`, and in a later stage `LTCEncoder`).
+
+### 1. Existing Components
+- **Data Loader (`src/utils/data.py`)**: `load_run` with `_SUCCESS` validation and fingerprint checking, combined OOV & time-delta statistics loading, dynamic sequence trimming, and in-memory batch iterator.
+- **Metrics (`src/utils/metrics.py`)**: Full-ranking `Recall@K` and `MRR@K` ($K \in \{5, 10\}$) over all item indices $1 \dots N$ with pessimistic tie-breaking and PAD token exclusion.
+- **Model Wrapper & Encoders (`src/models/`)**: `SessionRecommender` wrapper with $\mathcal{N}(0, 0.1)$ embedding, PAD logit masking, linear prediction head, and pluggable `SequenceEncoder` interface (`GRUEncoder`).
+- **Training Script (`scripts/train.py`)**: Full training loop with validation early stopping driven by `val MRR@10`, gradient norm clipping, and standard JSON/CSV output logging.
+- **Test Suite (`tests/`)**:
+  - `python tests/test_metrics.py` (Unit tests for metrics)
+  - `python tests/test_model_pipeline.py` (Integration & invariant tests T1-T6)
+
+### 2. Experimental-Design Invariants
+- **E1 (Item-Only Isolation)**: In item-only mode, time deltas ($\Delta t$) are set to `None` and never passed to the sequence encoder.
+- **E2 (Time-Aware Control)**: In `--use-time-deltas` mode, normalized input time gaps ($\log(1 + \Delta t) / \sigma_{\text{train}}$) are concatenated to item embeddings.
+- **E3 (Shared Infrastructure)**: Data loaders, loss function (full softmax cross-entropy), embedding initialization, head, optimizer (Adam), learning rate, and early-stopping rules are identical across architectures.
+- **E4 (No Architectural Bias)**: Models are evaluated fairly without pre-supposing performance differences.
+- **E5 (Validation-Driven Stopping)**: Early stopping is strictly driven by validation `MRR@10`. The test split remains untouched during training and development.
+
+### 3. Running Synthetic Model Tests
+```bash
+python tests/test_metrics.py
+python tests/test_model_pipeline.py
+```
+
